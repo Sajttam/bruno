@@ -70,6 +70,54 @@ const Assertions = ({ item, collection }) => {
     );
   };
 
+  const isJsonResponse = (data) => {
+    return data && typeof data === 'object' && !Array.isArray(data);
+  };
+
+  const generateAutoAssertions = ({body}) => {
+    const assertions = [];
+
+    const recurse = (value, path) => {
+      if (value === null || value === undefined) return;
+
+      if (typeof value !== 'object' || Array.isArray(value)) {
+        assertions.push({
+          name: path,
+          value: String(value)
+        });
+      } else {
+        for (const [key, nestedValue] of Object.entries(value)) {
+          recurse(nestedValue, `${path}.${key}`);
+        }
+      }
+    };
+
+    recurse(body, 'res.body');
+
+    return assertions;
+  }
+
+  const handleSmartAssertion = () => {
+    const body = item?.response?.data;
+
+    if (!body) {
+      console.warn('No response body available');
+      return;
+    }
+
+    const assertions = generateAutoAssertions({ body });
+
+    for (const assertion of assertions) {
+      dispatch(
+        addAssertion({
+          assertion: assertion,
+          itemUid: item.uid,
+          collectionUid: collection.uid
+        })
+      );
+    }
+  }
+
   return (
     <StyledWrapper className="w-full">
       <Table
@@ -116,6 +164,13 @@ const Assertions = ({ item, collection }) => {
       <button className="btn-add-assertion text-link pr-2 py-3 mt-2 select-none" onClick={handleAddAssertion}>
         + Add Assertion
       </button>
+      <div className="mt-1">
+        <button className="submit btn btn-sm btn-secondary" 
+                onClick={handleSmartAssertion}
+                disabled={!isJsonResponse(item?.response?.data)}>
+          Auto Assertion
+        </button>
+      </div>
     </StyledWrapper>
   );
 };

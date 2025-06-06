@@ -1189,11 +1189,18 @@ export const collectionsSlice = createSlice({
             item.draft = cloneDeep(item);
           }
           item.draft.request.assertions = item.draft.request.assertions || [];
-          item.draft.request.assertions.push({
+
+          const baseAssertion = {
             uid: uuid(),
             name: '',
             value: '',
             enabled: true
+          };
+          const provided = action.payload?.assertion || {};
+
+          item.draft.request.assertions.push({
+            ...baseAssertion,
+            ...provided
           });
         }
       }
