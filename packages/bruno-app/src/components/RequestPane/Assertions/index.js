@@ -70,8 +70,8 @@ const Assertions = ({ item, collection }) => {
     );
   };
 
-  const isJsonResponse = (data) => {
-    return data && typeof data === 'object' && !Array.isArray(data);
+  const isEligibleForJsonAssertions = (data) => {
+    return assertions == 0 && data && typeof data === 'object' && !Array.isArray(data); 
   };
 
   const generateAutoAssertions = ({body}) => {
@@ -99,12 +99,6 @@ const Assertions = ({ item, collection }) => {
 
   const handleSmartAssertion = () => {
     const body = item?.response?.data;
-
-    if (!body) {
-      console.warn('No response body available');
-      return;
-    }
-
     const assertions = generateAutoAssertions({ body });
 
     for (const assertion of assertions) {
@@ -167,7 +161,7 @@ const Assertions = ({ item, collection }) => {
       <div className="mt-1">
         <button className="submit btn btn-sm btn-secondary" 
                 onClick={handleSmartAssertion}
-                disabled={!isJsonResponse(item?.response?.data)}>
+                disabled={!isEligibleForJsonAssertions(item?.response?.data)}>
           Auto Assertion
         </button>
       </div>
