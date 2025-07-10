@@ -71,19 +71,35 @@ const Assertions = ({ item, collection }) => {
   };
 
   const isEligibleForJsonAssertions = (data) => {
-    return assertions == 0 && data && typeof data === 'object' && !Array.isArray(data); 
+    return assertions == 0 && data && (typeof data === 'object' || Array.isArray(data)); 
   };
 
-  const generateAutoAssertions = ({body}) => {
+  const generateAutoAssertions = ({ body }) => {
     const assertions = [];
+    const seen = new WeakSet(); // for cycle detection
 
     const recurse = (value, path) => {
       if (value === null || value === undefined) return;
 
-      if (typeof value !== 'object' || Array.isArray(value)) {
+      // Prevent circular references
+      if (typeof value === 'object') {
+        if (seen.has(value)) return;
+        seen.add(value);
+      }
+
+      // If primitive, push as-is (preserve type)
+      if (
+        typeof value !== 'object' ||
+        value instanceof Date ||
+        value instanceof RegExp
+      ) {
         assertions.push({
           name: path,
-          value: String(value)
+          value: value
+        });
+      } else if (Array.isArray(value)) {
+        value.forEach((item, index) => {
+          recurse(item, `${path}[${index}]`);
         });
       } else {
         for (const [key, nestedValue] of Object.entries(value)) {
@@ -95,7 +111,7 @@ const Assertions = ({ item, collection }) => {
     recurse(body, 'res.body');
 
     return assertions;
-  }
+  };
 
   const handleSmartAssertion = () => {
     const body = item?.response?.data;
